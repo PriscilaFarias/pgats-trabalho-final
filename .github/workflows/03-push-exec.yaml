@@ -41,9 +41,12 @@ jobs:
       - name: Instalando dependências
         run: npm ci
 
-      # executar os testes unitários
-      - name: Executando testes unitários
-        run: npm run test:verbose
+      # executar os testes unitários (verbose não falha) e gerar JSON
+      - name: Executando testes (verbose, não falha)
+        run: npm run test:verbose || true
+
+      - name: Gerando relatório JSON de testes
+        run: npm test
 
       # Salvando relatórios de testes
       - name: Salvando relatórios de testes

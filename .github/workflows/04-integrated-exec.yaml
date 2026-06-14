@@ -57,8 +57,8 @@ jobs:
       - name: Executando testes unitários
         run: npm run test
 
-      - name: Gerar relatório de cobertura
-        run: npm run test:verbose
+      - name: Gerar relatório de cobertura (não falha)
+        run: npm run test:verbose || true
 
       - name: Salvando relatórios de testes
         uses: actions/upload-artifact@v4

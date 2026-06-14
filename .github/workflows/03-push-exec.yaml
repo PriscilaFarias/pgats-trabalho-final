@@ -1,0 +1,68 @@
+# CI de Nível 03 - Execução por Push no repositório
+
+# nome da pipeline
+name: 'N3 - Execução por Push'
+
+# gatilhos / triggers - regras de disparo
+# gatilho por push = push
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+
+# tarefas dentro da pipeline = jobs
+
+jobs:
+  # nome do job
+  testes-unitarios:
+    # máquina onde o job vai rodar
+    runs-on: ubuntu-latest
+
+    # passos do job
+    steps:
+      # clone do projeto
+      - uses: actions/checkout@v4
+
+      # instalação do node
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      # instalação das dependências
+      - name: Instalando dependências
+        run: npm ci
+
+      # executar os testes unitários
+      - name: Executando testes unitários
+        run: npm run test:verbose
+
+      # Salvando relatórios de testes
+      - name: Salvando relatórios de testes
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: test-results-push-${{ github.run_number }}
+          path: test-results.json
+          retention-days: 30
+
+      # Comentar no PR com resultados
+      - name: Comentar no PR com resultados
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ Testes executados com sucesso! Relatório disponível nos artefatos.'
+            })

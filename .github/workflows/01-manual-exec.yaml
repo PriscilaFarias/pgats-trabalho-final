@@ -1,0 +1,45 @@
+# CI de Nível 01 - Disparo Manual através de clique
+
+# nome da pipeline
+name: 'N1 - Execução Manual'
+
+# gatilhos / triggers - regras de disparo
+# gatilho manual = workflow_dispatch
+
+on:
+  workflow_dispatch:
+
+# tarefas dentro da pipeline = jobs
+
+jobs:
+  # nome do job
+  testes-unitarios:
+    # máquina onde o job vai rodar
+    runs-on: ubuntu-latest
+
+    # passos do job
+    steps:
+      # clone do projeto
+      - uses: actions/checkout@v4
+
+      # instalação do node
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      # instalação das dependências
+      - name: Instalando dependências
+        run: npm ci
+
+      # executar os testes unitários
+      - name: Executando testes unitários
+        run: npm run test:verbose
+
+      # Salvando relatórios de testes
+      - name: Salvando relatórios de testes
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: test-results-manual
+          path: test-results.json
+          retention-days: 30

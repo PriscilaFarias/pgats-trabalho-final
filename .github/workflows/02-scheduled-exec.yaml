@@ -1,0 +1,55 @@
+# CI de Nível 02 - Execução Agendada
+
+# nome da pipeline
+name: 'N2 - Execução Agendada'
+
+# gatilhos / triggers - regras de disparo
+# gatilho manual = workflow_dispatch
+# gatilho agendado = schedule
+
+on:
+  workflow_dispatch:
+  schedule:
+    # cronograma de execução
+    # 1 - minuto, 2 - hora, 3 dia do mês, 4 - mês, 5 - dia da semana
+
+    # Roda todo dia à meia-noite (UTC)
+    - cron: '0 0 * * *'
+
+    # Roda toda segunda-feira às 09:00 (UTC)
+    - cron: '0 9 * * 1'
+
+# tarefas dentro da pipeline = jobs
+
+jobs:
+  # nome do job
+  testes-unitarios:
+    # máquina onde o job vai rodar
+    runs-on: ubuntu-latest
+
+    # passos do job
+    steps:
+      # clone do projeto
+      - uses: actions/checkout@v4
+
+      # instalação do node
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      # instalação das dependências
+      - name: Instalando dependências
+        run: npm ci
+
+      # executar os testes unitários
+      - name: Executando testes unitários
+        run: npm run test:verbose
+
+      # Salvando relatórios de testes
+      - name: Salvando relatórios de testes
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: test-results-scheduled-${{ github.run_number }}
+          path: test-results.json
+          retention-days: 30

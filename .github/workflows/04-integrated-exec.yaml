@@ -1,0 +1,100 @@
+# CI de Nível 04 - Pipeline Integrada com múltiplas etapas
+
+# nome da pipeline
+name: 'N4 - Execução Integrada'
+
+# gatilhos / triggers - regras de disparo
+# gatilho manual = workflow_dispatch
+# gatilho por push na branch principal
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+# tarefas dentro da pipeline = jobs
+
+jobs:
+  # Etapa 1: Verificação inicial
+  verificacao:
+    # máquina onde o job vai rodar
+    runs-on: ubuntu-latest
+
+    # passos do job
+    steps:
+      # clone do projeto
+      - uses: actions/checkout@v4
+
+      # instalação do node
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      # verificação de sintaxe
+      - name: Instalando dependências
+        run: npm ci
+
+      - name: Verificação de Código
+        run: npm run test:verbose --dry-run || true
+
+  # Etapa 2: Testes Unitários
+  testes-unitarios:
+    runs-on: ubuntu-latest
+    needs: [verificacao]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Instalando dependências
+        run: npm ci
+
+      - name: Executando testes unitários
+        run: npm run test
+
+      - name: Gerar relatório de cobertura
+        run: npm run test:verbose
+
+      - name: Salvando relatórios de testes
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: test-results-integrated-${{ github.run_number }}
+          path: test-results.json
+          retention-days: 30
+
+  # Etapa 3: Relatório Final
+  relatorio-final:
+    runs-on: ubuntu-latest
+    needs: [testes-unitarios]
+    if: ${{ always() }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download dos artefatos de testes
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results-integrated-${{ github.run_number }}
+
+      - name: Exibir informações da execução
+        run: |
+          echo "=== RESUMO DA EXECUÇÃO ===" 
+          echo "Data: $(date)"
+          echo "Commit: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Executor: ${{ github.actor }}"
+          echo "============================"
+
+      - name: Salvando resumo da execução
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: pipeline-summary-${{ github.run_number }}
+          path: .
+          retention-days: 30

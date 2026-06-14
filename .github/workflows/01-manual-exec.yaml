@@ -31,12 +31,33 @@ jobs:
       - name: Instalando dependências
         run: npm ci
 
+      - name: Mostrar ambiente e arquivos (debug)
+        run: |
+          echo "CWD: $(pwd)"
+          echo "Listando arquivos na raiz do workspace:"
+          ls -la
+          echo "Node e npm versions:" 
+          node -v
+          npm -v
+
       # executar os testes unitários (verbose não falha) e gerar JSON
       - name: Executando testes (verbose, não falha)
         run: npm run test:verbose || true
 
       - name: Gerando relatório JSON de testes
         run: npm test
+
+      - name: Verificar presença do relatório JSON (debug)
+        if: ${{ always() }}
+        run: |
+          echo "--- após execução dos testes ---"
+          ls -la || true
+          if [ -f test-results.json ]; then
+            echo "test-results.json encontrado, exibindo conteúdo (trimmed):"
+            head -n 200 test-results.json || true
+          else
+            echo "test-results.json NÃO encontrado"
+          fi
 
       # Salvando relatórios de testes
       - name: Salvando relatórios de testes
